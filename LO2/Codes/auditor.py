@@ -12,6 +12,7 @@ while (True):
     #Asking the user for an input 
     stock_quantity = input("Enter the quantity: ")
 
+    #the process will quit regardless of what the user input
     if stock_quantity.lower() == "quit":
         print("Total Quantity Recorded: ", stock_quantity_recorded)
         print("Number of Failed Entry: ", rejects)
