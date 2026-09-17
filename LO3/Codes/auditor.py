@@ -1,7 +1,7 @@
 #pre defined variables
-
-stock_quantity_recorded = 0
+total_units = 0
 rejects = 0
+processed = 0
 
 #pre defined functions
 
@@ -11,7 +11,7 @@ def get_valid_input():
 
         stock_quantity = input("Enter the quantity: ")
 
-        if (stock_quantity.lower() == 'quit'):
+        if (stock_quantity.strip().lower() == 'quit'):
             return "quit"
 
         try:
@@ -59,13 +59,18 @@ while(True):
     result = get_valid_input()
 
     if (result == 'quit'):
-        print("Total Quantity Recorded: ", stock_quantity_recorded)
-        print("Number of Failed Entry: ", rejects)
-        print("Program End")
         break
 
     elif (result == 0):
         rejects += 1
 
     elif (result > 0):
-        stock_quantity_recorded += result
+
+        processed += 1
+        total_units = process_delivery(total_units, result)
+        tax = calculate_tax(result)
+
+        print("\nDelivery Confirmed: ", result)
+        print("Delivery Tax: ", tax)
+
+generate_report(total_units, rejects)
