@@ -38,6 +38,14 @@ def get_valid_input():
             print("Invalid Input. Please input values only.")
             return 0
 
+def process_delivery(current_total, new_value):
+    current_total = current_total + new_value
+    return current_total
+
+def calculate_tax(amount):
+    amount = amount*0.10
+    return amount
+
 
 #main code
 
