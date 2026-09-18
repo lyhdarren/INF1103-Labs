@@ -1,7 +1,5 @@
 #pre defined variables
-total_units = 0
-rejects = 0
-processed = 0
+
 
 #pre defined functions
 
@@ -39,8 +37,17 @@ def get_valid_input():
             return 0
 
 def process_delivery(current_total, new_value):
-    current_total = current_total + new_value
-    return current_total
+
+    check_overflow = current_total + new_value
+
+    if (check_overflow >= 500):
+
+        return 0
+
+    else: 
+
+        current_total = check_overflow
+        return current_total
 
 def calculate_tax(amount):
     amount = amount*0.10
@@ -54,27 +61,44 @@ def generate_report(total_units, failed_attempts):
 
 #main code
 
-while(True):
+def main():
 
-    result = get_valid_input()
+    total_units = 0
+    rejects = 0
+    processed = 0
 
-    if (result == 'quit'):
-        break
+    while(True):
 
-    elif (result == 0):
-        rejects += 1
+        result = get_valid_input()
 
-    elif (result > 0):
+        if (result == 'quit'):
+            break
 
-        processed += 1
-        total_units = process_delivery(total_units, result)
-        tax = calculate_tax(result)
+        elif (result == 0):
+            rejects += 1
 
-        print("\nDelivery Confirmed: ", result)
-        print("Delivery Tax: ", tax)
+        elif (result > 0):
 
-    else: 
-        print("Error")
-        rejects += 1
+            processed += 1
+        
+            if (process_delivery(total_units, result) <= 0):
+                print("There is an overflow and have hit the limit of 500. ")
+                rejects += 1
 
-generate_report(total_units, rejects)
+            else:
+                total_units = process_delivery(total_units, result)
+
+                tax = calculate_tax(result)
+
+                print("\nDelivery Confirmed: ", result)
+                print("Delivery Tax: ", tax)
+
+        else: 
+
+            print("Error")
+            rejects += 1
+
+    generate_report(total_units, rejects)
+
+if __name__ == "__main__":
+    main()
