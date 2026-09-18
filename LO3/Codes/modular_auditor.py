@@ -73,4 +73,8 @@ while(True):
         print("\nDelivery Confirmed: ", result)
         print("Delivery Tax: ", tax)
 
+    else: 
+        print("Error")
+        rejects += 1
+
 generate_report(total_units, rejects)
