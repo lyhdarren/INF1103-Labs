@@ -1,0 +1,3 @@
+1001, Wireless Mouse, 4
+1002, Wireless Mouse, 2
+1003, Wireless Mouse, 2
