@@ -14,6 +14,9 @@ def load_inventory():
             data = file.readlines()
             inventory = []
             
+            if len(data) == 0:
+                print("No Data Shown!\n")
+            
             for line in data:
                 data = line.strip().split(",")
                 inventory.append(data)
@@ -37,7 +40,7 @@ def save_inventory(x, y):
         with open("inventory.txt", "a") as file:
             
             file.writelines(new_inventory)
-            print("New Order Added:")
+            print("\nNew Order Added:")
             print(f"{latestorderid},{x},{y}\n")
             print("Order Successfully saved to inventory.txt")
             
@@ -76,14 +79,12 @@ def get_valid_input_LO4():
         try:
             
             user_quantity = int(input("Enter Quantity: "))
+            save_inventory(user_productname, user_quantity)
             
         except ValueError as err:
-            print("Error\n", err)
             
-        save_inventory(user_productname, user_quantity)
-        
-        
-
+            print(f"Error\n {err} \n")
+            
 #---------------- LO3 FUNCTIONS ---------------------
 
 def get_valid_input():

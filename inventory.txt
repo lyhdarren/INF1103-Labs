@@ -1,4 +1,0 @@
-1,bruh,10
-2,bruh,20
-3,bruh,30
-4,bruh,40
