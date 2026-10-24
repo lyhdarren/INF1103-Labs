@@ -2,6 +2,6 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY inventory_management.py .
+COPY updated_inventory.py .
 
-CMD ["python", "inventory_management.py"]
+CMD ["python", "updated_inventory.py"]
