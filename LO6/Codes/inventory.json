@@ -34,5 +34,11 @@
         "name": "teste",
         "price": 100.0,
         "stock": 30
+    },
+    {
+        "productid": "P007",
+        "name": "testttteeee",
+        "price": 1000.0,
+        "stock": 1000
     }
 ]
