@@ -1,0 +1,26 @@
+[
+    {
+        "productid": "P1",
+        "name": "Laptop",
+        "price": 1200.0,
+        "stock": 5,
+        "type": "physical",
+        "weight": 2.5
+    },
+    {
+        "productid": "D1",
+        "name": "Office",
+        "price": 99.0,
+        "stock": 999,
+        "type": "digital",
+        "download_size": 850.0
+    },
+    {
+        "productid": "P2",
+        "name": "test",
+        "price": 100.0,
+        "stock": 10,
+        "type": "physical",
+        "weight": 10.0
+    }
+]
