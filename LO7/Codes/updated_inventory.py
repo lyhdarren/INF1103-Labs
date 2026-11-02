@@ -12,10 +12,10 @@ class Product(ABC):
         self.__price = price
         self.__stock = stock
 
-    def get_product_id(self):
+    def get_product_id(self) -> str:
         return self.__product_id
 
-    def get_name(self):
+    def get_name(self) -> str:
         return self.__name
 
     def get_price(self) -> float:
@@ -41,7 +41,6 @@ class Product(ABC):
 
 
 class CanBeShipped(ABC):
-    """Interface-style ABC — only shippable products implement this."""
 
     @abstractmethod
     def calculate_shipping_cost(self) -> float:
@@ -60,17 +59,14 @@ class PhysicalProduct(Product, CanBeShipped):
     def get_weight(self) -> float:
         return self.__weightkg
 
-    # Override + reuse parent via super()
     def display_information(self):
         super().display_information()
         print(f"Type: Physical | Weight: {self.__weightkg} kg")
 
-    # Abstract method implementations
     def get_fulfillment_info(self) -> str:
         return f"Requires physical shipping ({self.__weightkg} kg)."
 
     def calculate_shipping_cost(self) -> float:
-        # $5 base + $2 per kg
         return round(5.0 + 2.0 * self.__weightkg, 2)
 
 
@@ -120,13 +116,12 @@ class Inventory:
             return
         for p in self.__products:
             p.display_information()
-            print(f"\nFulfillment: {p.get_fulfillment_info()}")
+            print(f"Fulfillment: {p.get_fulfillment_info()}\n")
 
     def get_all_products(self):
         return list(self.__products)
 
     def total_shipping_cost(self) -> float:
-        """Uses the interface — only shippable items contribute."""
         total = 0.0
         for p in self.__products:
             if isinstance(p, CanBeShipped):
@@ -135,198 +130,208 @@ class Inventory:
 
 
 # ==============================
-# FILE HANDLING (JSON)
+# FILE HANDLING CLASS
 # ==============================
-def load_inventory():
-    try:
-        with open("inventory.json", "r") as file:
-            data = json.load(file)
-    except FileNotFoundError:
-        print("inventory.json not found — starting with an empty inventory.")
-        return []
-    except json.JSONDecodeError:
-        print("inventory.json is corrupted — starting with an empty inventory.")
-        return []
+class FileHandling:
+    def __init__(self, filename="inventory.json"):
+        self.filename = filename
 
-    products = []
-    for row in data:
+    def load_inventory(self):
         try:
-            ptype = row["type"]
-            pid   = str(row["productid"]).strip()
-            name  = str(row["name"]).strip()
-            price = float(row["price"])
-            stock = int(row["stock"])
+            with open(self.filename, "r") as file:
+                data = json.load(file)
+        except FileNotFoundError:
+            print(f"{self.filename} not found — starting with an empty inventory.")
+            return []
+        except json.JSONDecodeError:
+            print(f"{self.filename} is corrupted — starting with an empty inventory.")
+            return []
 
-            if ptype == "physical":
-                products.append(
-                    PhysicalProduct(pid, name, price, stock, float(row["weight"]))
-                )
-            elif ptype == "digital":
-                products.append(
-                    DigitalProduct(pid, name, price, stock, float(row["download_size"]))
-                )
+        products = []
+        for row in data:
+            try:
+                ptype = row["type"]
+                pid   = str(row["productid"]).strip()
+                name  = str(row["name"]).strip()
+                price = float(row["price"])
+                stock = int(row["stock"])
+
+                if ptype == "physical":
+                    products.append(
+                        PhysicalProduct(pid, name, price, stock, float(row["weight"]))
+                    )
+                elif ptype == "digital":
+                    products.append(
+                        DigitalProduct(pid, name, price, stock, float(row["download_size"]))
+                    )
+                else:
+                    print(f"Skipping unknown product type: {ptype}")
+            except (KeyError, ValueError, TypeError) as e:
+                print(f"Skipping bad record: {row} ({e})")
+        return products
+
+    def save_inventory(self, inventory):
+        data = []
+        for p in inventory.get_all_products():
+            base = {
+                "productid": p.get_product_id(),
+                "name":      p.get_name(),
+                "price":     p.get_price(),
+                "stock":     p.get_stock(),
+            }
+            if isinstance(p, PhysicalProduct):
+                base["type"]   = "physical"
+                base["weight"] = p.get_weight()
+            elif isinstance(p, DigitalProduct):
+                base["type"]          = "digital"
+                base["download_size"] = p.get_download_size()
+            data.append(base)
+
+        with open(self.filename, "w") as file:
+            json.dump(data, file, indent=4)
+        print(f"Inventory successfully saved ({len(data)} products) to {self.filename}.")
+
+
+# ==============================
+# MAIN CLASS (CONTROLLER)
+# ==============================
+class Main:
+    def __init__(self):
+        self.fh = FileHandling("inventory.json")
+        self.inventory = Inventory()
+        
+        # Load existing data into the inventory
+        for product in self.fh.load_inventory():
+            self.inventory.add_product(product)
+
+    def handle_add_product(self):
+        print("\n--- Add New Product ---")
+        print("1. Physical Product")
+        print("2. Digital Product")
+
+        ptype = input("Choose type (1/2): ").strip()
+        if ptype not in ("1", "2"):
+            print("FAILED: Invalid product type.")
+            return
+
+        pid = input("Enter product ID: ").strip()
+        if pid == "":
+            print("FAILED: Product ID cannot be empty.")
+            return
+
+        name = input("Enter product name: ").strip()
+        if name == "":
+            print("FAILED: Product name cannot be empty.")
+            return
+
+        try:
+            price = float(input("Enter price: "))
+            stock = int(input("Enter stock quantity: "))
+        except ValueError:
+            print("FAILED: Invalid number entered.")
+            return
+
+        if price < 0 or stock < 0:
+            print("FAILED: Price and stock cannot be negative.")
+            return
+
+        try:
+            if ptype == "1":
+                weight = float(input("Enter weight (kg): "))
+                if weight < 0:
+                    print("FAILED: Weight cannot be negative.")
+                    return
+                product = PhysicalProduct(pid, name, price, stock, weight)
             else:
-                print(f"Skipping unknown product type: {ptype}")
-        except (KeyError, ValueError, TypeError) as e:
-            print(f"Skipping bad record: {row} ({e})")
-    return products
+                size = float(input("Enter download size (MB): "))
+                if size < 0:
+                    print("FAILED: Download size cannot be negative.")
+                    return
+                product = DigitalProduct(pid, name, price, stock, size)
+        except ValueError:
+            print("FAILED: Invalid numeric input.")
+            return
 
-
-def save_inventory(inventory):
-    data = []
-    for p in inventory.get_all_products():
-        base = {
-            "productid": p.get_product_id(),
-            "name":      p.get_name(),
-            "price":     p.get_price(),
-            "stock":     p.get_stock(),
-        }
-        if isinstance(p, PhysicalProduct):
-            base["type"]   = "physical"
-            base["weight"] = p.get_weight()
-        elif isinstance(p, DigitalProduct):
-            base["type"]          = "digital"
-            base["download_size"] = p.get_download_size()
-        data.append(base)
-
-    with open("inventory.json", "w") as file:
-        json.dump(data, file, indent=4)
-    print(f"Inventory successfully saved ({len(data)} products) to inventory.json.")
-
-
-def handle_add_product(inventory):
-    print("\n--- Add New Product ---")
-    print("1. Physical Product")
-    print("2. Digital Product")
-
-    ptype = input("Choose type (1/2): ").strip()
-    if ptype not in ("1", "2"):
-        print("FAILED: Invalid product type.")
-        return
-
-    pid = input("Enter product ID: ").strip()
-    if pid == "":
-        print("FAILED: Product ID cannot be empty.")
-        return
-
-    name = input("Enter product name: ").strip()
-    if name == "":
-        print("FAILED: Product name cannot be empty.")
-        return
-
-    try:
-        price = float(input("Enter price: "))
-        stock = int(input("Enter stock quantity: "))
-    except ValueError:
-        print("FAILED: Invalid number entered.")
-        return
-
-    if price < 0 or stock < 0:
-        print("FAILED: Price and stock cannot be negative.")
-        return
-
-    try:
-        if ptype == "1":
-            weight = float(input("Enter weight (kg): "))
-            if weight < 0:
-                print("FAILED: Weight cannot be negative.")
-                return
-            product = PhysicalProduct(pid, name, price, stock, weight)
+        if self.inventory.add_product(product):
+            print(f"SUCCESS: Product '{name}' added to memory.")
+            self.fh.save_inventory(self.inventory)
         else:
-            size = float(input("Enter download size (MB): "))
-            if size < 0:
-                print("FAILED: Download size cannot be negative.")
-                return
-            product = DigitalProduct(pid, name, price, stock, size)
-    except ValueError:
-        print("FAILED: Invalid numeric input.")
-        return
+            print(f"FAILED: Product ID '{pid}' already exists.")
 
-    if inventory.add_product(product):
-        print(f"SUCCESS: Product '{name}' added to memory.")
-        save_inventory(inventory)
-    else:
-        print(f"FAILED: Product ID '{pid}' already exists.")
+    def handle_update_stock(self):
+        print("\n--- Update Stock ---")
+        pid = input("Enter product ID: ").strip()
+        product = self.inventory.search_product(pid)
 
+        if product is None:
+            print(f"Error: Product ID {pid} not found!")
+            return
 
-def handle_update_stock(inventory):
-    print("\n--- Update Stock ---")
-    pid = input("Enter product ID: ").strip()
-    product = inventory.search_product(pid)
+        try:
+            new_stock = int(input("Enter new stock quantity: "))
+        except ValueError:
+            print("Invalid quantity. Please enter a whole number.")
+            return
 
-    if product is None:
-        print(f"Error: Product ID {pid} not found!")
-        return
+        if product.update_stock(new_stock):
+            print(f"Stock for {product.get_name()} updated to {new_stock} in memory.")
+            self.fh.save_inventory(self.inventory)
 
-    try:
-        new_stock = int(input("Enter new stock quantity: "))
-    except ValueError:
-        print("Invalid quantity. Please enter a whole number.")
-        return
+    def handle_search(self):
+        print("\n--- Search Product ---")
+        pid = input("Enter product ID: ").strip()
+        product = self.inventory.search_product(pid)
 
-    if product.update_stock(new_stock):   # fixed typo: upate_stock -> update_stock
-        print(f"Stock for {product.get_name()} updated to {new_stock} in memory.")
-        save_inventory(inventory)
+        if product is None:
+            print(f"Error: Product ID {pid} not found!")
+            return
 
+        print("Product Found:")
+        product.display_information()
+        print(f"Fulfillment: {product.get_fulfillment_info()}")
+        if isinstance(product, CanBeShipped):
+            print(f"Shipping cost: ${product.calculate_shipping_cost():.2f}")
 
-def handle_search(inventory):
-    print("\n--- Search Product ---")
-    pid = input("Enter product ID: ").strip()
-    product = inventory.search_product(pid)
+    def handle_shipping_total(self):
+        print(f"\nTotal shipping cost of inventory: ${self.inventory.total_shipping_cost():.2f}")
 
-    if product is None:
-        print(f"Error: Product ID {pid} not found!")
-        return
+    def run(self):
+        while True:
+            print("\n===========================")
+            print("INVENTORY MANAGEMENT SYSTEM")
+            print("===========================")
+            print("1. Display All Products")
+            print("2. Add Product")
+            print("3. Update Stock")
+            print("4. Search Product")
+            print("5. Total Shipping Cost")
+            print("0. Exit")
+            print("----------------------------")
 
-    print("Product Found:")
-    product.display_information()
-    print(f"Fulfillment: {product.get_fulfillment_info()}")
-    if isinstance(product, CanBeShipped):
-        print(f"Shipping cost: ${product.calculate_shipping_cost():.2f}")
+            choice = input("Enter your choice: ").strip()
 
-
-def handle_shipping_total(inventory):
-    print(f"\nTotal shipping cost of inventory: ${inventory.total_shipping_cost():.2f}")
-
-
-def main():
-    inventory = Inventory()
-
-    for product in load_inventory():
-        inventory.add_product(product)
-
-    while True:
-        print("\n===========================")
-        print("INVENTORY MANAGEMENT SYSTEM")
-        print("===========================")
-        print("1. Display All Products")
-        print("2. Add Product")
-        print("3. Update Stock")
-        print("4. Search Product")
-        print("5. Total Shipping Cost")
-        print("0. Exit")
-        print("----------------------------")
-
-        choice = input("Enter your choice: ").strip()
-
-        if choice == "1":
-            print("\n--- Current Inventory ---")
-            inventory.display_all()
-        elif choice == "2":
-            handle_add_product(inventory)
-        elif choice == "3":
-            handle_update_stock(inventory)
-        elif choice == "4":
-            handle_search(inventory)
-        elif choice == "5":
-            handle_shipping_total(inventory)
-        elif choice == "0":
-            print("Goodbye!")
-            print(f"Total Records in JSON: {len(inventory.get_all_products())}")
-            break
-        else:
-            print("Invalid choice. Please enter a number from 0 to 5.")
+            if choice == "1":
+                print("\n--- Current Inventory ---")
+                self.inventory.display_all()
+            elif choice == "2":
+                self.handle_add_product()
+            elif choice == "3":
+                self.handle_update_stock()
+            elif choice == "4":
+                self.handle_search()
+            elif choice == "5":
+                self.handle_shipping_total()
+            elif choice == "0":
+                print("Goodbye!")
+                print(f"Total Records in JSON: {len(self.inventory.get_all_products())}")
+                break
+            else:
+                print("Invalid choice. Please enter a number from 0 to 5.")
 
 
+# ==============================
+# ENTRY POINT
+# ==============================
 if __name__ == "__main__":
-    main()
+    app = Main()   # Create the Main object
+    app.run()      # Start the program loop
