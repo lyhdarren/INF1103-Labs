@@ -1,0 +1,14 @@
+1) 
+
+Prediction: 
+Yes. Del ony remove the variable name. Each product stores its own reference, so the other object stays alive.
+
+Actual:
+book.get_supplier().get_name() returned ACme. Using sup itself raises name error. 
+
+2)
+Prediction:
+Product and Order line. Each order creates its own line and both lines point to the same product.
+
+Actual:
+Both lines reference the same product and object and the 2 lines were distinct object. Total were 40 and 60/

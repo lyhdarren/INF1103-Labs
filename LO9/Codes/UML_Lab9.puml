@@ -1,0 +1,130 @@
+@startuml
+skinparam classAttributeIconSize 0
+hide empty members
+
+class Main <<controller>> {
+  -fh: FileHandling
+  -inventory: Inventory
+  +handle_add_product(): None
+  +handle_update_stock(): None
+  +handle_search(): None
+  +handle_shipping_total(): None
+  +run(): None
+}
+
+class Inventory {
+  -__products: list[Product]
+  +add_product(product: Product): bool
+  +remove_product(product_id: str): bool
+  +search_product(product_id: str): Product | None
+  +display_all(): None
+  +get_all_products(): list[Product]
+  +total_shipping_cost(): float
+}
+
+class FileHandling {
+  -filename: str
+  +load_inventory(): list[Product]
+  +save_inventory(inventory: Inventory): None
+}
+
+class "filehandling.py" as FileHandlingModule <<module>> {
+  +load_products(path: str, inventory: Inventory, supplier: Supplier): None
+}
+
+class Supplier {
+  -__supplier_id: str
+  -__name: str
+  -__contact_email: str
+  +get_supplier_id(): str
+  +get_name(): str
+  +get_contact_email(): str
+  +display_information(): None
+}
+
+abstract class Product {
+  -__product_id: str
+  -__name: str
+  -__price: float
+  -__stock: int
+  -__supplier: Supplier
+  +get_product_id(): str
+  +get_name(): str
+  +get_price(): float
+  +get_stock(): int
+  +get_supplier(): Supplier
+  +update_stock(new_quantity: int): bool
+  +display_information(): None
+  {abstract} +get_fulfillment_info(): str
+}
+
+interface CanBeShipped {
+  +calculate_shipping_cost(): float
+}
+
+class PhysicalProduct {
+  -__weightkg: float
+  +get_weight(): float
+  +get_fulfillment_info(): str
+  +calculate_shipping_cost(): float
+}
+
+class DigitalProduct {
+  -__download_size: float
+  +get_download_size(): float
+  +get_fulfillment_info(): str
+}
+
+class ProductFactory {
+  {static} +create(product_type: str, product_id: str, name: str, price: float, stock_quantity: int, supplier: Supplier, **details): Product
+}
+
+class Order {
+  +order_id: str
+  +order_lines: list[OrderLine]
+  +discount: DiscountStrategy
+  +set_discount(discount: DiscountStrategy): None
+  +add_order_line(product: Product, quantity: int): None
+  +calculate_total(): float
+}
+
+class OrderLine {
+  +product: Product
+  +quantity: int
+  +calculate_subtotal(): float
+}
+
+abstract class DiscountStrategy {
+  {abstract} +apply(total: float): float
+}
+
+class NoDiscount
+class PercentageDiscount {
+  +percentage: float
+}
+class BulkDiscount {
+  +threshold: float
+  +amount: float
+}
+class StudentDiscount
+
+Main --> "1" Inventory : manages
+Main --> "1" FileHandling : loads/saves
+Inventory "1" o-- "0..*" Product : stores
+Product "0..*" --> "1" Supplier : supplied by
+PhysicalProduct --|> Product
+DigitalProduct --|> Product
+PhysicalProduct ..|> CanBeShipped
+ProductFactory ..> Product : creates
+FileHandling ..> ProductFactory : creates on load
+FileHandlingModule ..> ProductFactory : creates CSV products
+FileHandlingModule ..> Inventory : adds loaded products to
+Order "1" *-- "0..*" OrderLine : contains
+OrderLine "0..*" --> "1" Product : item
+Order "0..*" --> "1" DiscountStrategy : uses
+NoDiscount --|> DiscountStrategy
+PercentageDiscount --|> DiscountStrategy
+BulkDiscount --|> DiscountStrategy
+StudentDiscount --|> DiscountStrategy
+
+@enduml

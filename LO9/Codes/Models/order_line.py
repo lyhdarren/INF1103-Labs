@@ -1,0 +1,21 @@
+from Models.product import Product
+
+
+class OrderLine:
+
+    def __init__(
+        self,
+        product: Product,
+        quantity: int
+    ):
+        try:
+            quantity = int(quantity)
+        except (TypeError, ValueError):
+            raise ValueError("Quantity must be a whole number.")
+        if quantity <= 0:
+            raise ValueError("Quantity must be greater than zero.")
+        self.product: Product = product
+        self.quantity: int = quantity
+
+    def calculate_subtotal(self) -> float:
+        return self.product.get_price() * self.quantity
